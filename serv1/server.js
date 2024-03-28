@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+
 const express = require('express');
 const mysql = require('mysql');
 
@@ -16,35 +18,62 @@ app.use(express.urlencoded({ extended: false }));
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/register.html');
+    res.sendFile(__dirname + '/serv1/login.html');
 });
 
 app.post('/register', (req, res) => {
-    // Handle user registration
     const { email, password } = req.body;
-    const user = { email, password };
-    pool.query('INSERT INTO users SET ?', user, (err, result) => {
-        if (err) throw err;
-        console.log('User registered');
-        res.redirect('/login');
+    
+    // Hash the password
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+        if (err) {
+            res.status(500).send('Error hashing password');
+            return;
+        }
+        
+        const user = { email, password: hashedPassword };
+        
+        pool.query('INSERT INTO users SET ?', user, (err, result) => {
+            if (err) {
+                res.status(500).send('Error registering user');
+                return;
+            }
+            console.log('User registered');
+            res.redirect('/login');
+        });
     });
 });
+
 
 app.get('/login', (req, res) => {
     res.sendFile(__dirname + '/login.html');
 });
 
 app.post('/login', (req, res) => {
-    // Handle user login
     const { email, password } = req.body;
+    
     pool.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-        if (err) throw err;
+        if (err) {
+            res.status(500).send('Error finding user');
+            return;
+        }
+        
         if (results.length > 0) {
-            if (results[0].password === password) {
-                res.redirect('/protected');
-            } else {
-                res.send('Incorrect password');
-            }
+            const hashedPassword = results[0].password;
+            
+            // Compare the hashed password with the input password
+            bcrypt.compare(password, hashedPassword, (err, isMatch) => {
+                if (err) {
+                    res.status(500).send('Error comparing passwords');
+                    return;
+                }
+                
+                if (isMatch) {
+                    res.redirect('/protected');
+                } else {
+                    res.send('Incorrect password');
+                }
+            });
         } else {
             res.send('Email not registered');
         }
