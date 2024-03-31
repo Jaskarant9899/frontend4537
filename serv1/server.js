@@ -20,6 +20,12 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
 
+// Content Security Policy middleware
+app.use((req, res, next) => {
+    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'none';");
+    next();
+  });
+
 let fetch;
 import('node-fetch').then(({ default: nodeFetch }) => {
   fetch = nodeFetch;
@@ -124,6 +130,19 @@ app.get('/protected', (req, res) => {
 
 app.get('/quote_generator', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'quote_generator.html'));
+});
+
+// Endpoint to check if the current user is an admin
+app.get('/api/is-admin', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(403).send('Unauthorized');
+    }
+    pool.query('SELECT is_admin FROM users WHERE id = ?', [req.session.userId], (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(500).send('Error retrieving admin status');
+        }
+        res.json({ isAdmin: results[0].is_admin });
+    });
 });
 
 

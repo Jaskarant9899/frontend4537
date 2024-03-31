@@ -2,12 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protected Page</title>
+    <script>
+        window.onload = function() {
+            // Initially check if the user is an admin
+            fetch('/api/is-admin', {credentials: 'include'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isAdmin) {
+                        // Fetch and display all users' API usage for admin
+                        fetch('/api/admin/usage', {credentials: 'include'})
+                            .then(response => response.json())
+                            .then(allUsersData => {
+                                const allUsageHtml = allUsersData.map(user => 
+                                    `${user.email}: ${user.api_calls_made} API calls`).join('<br>');
+                                document.getElementById('apiUsage').innerHTML = allUsageHtml;
+                            });
+                    } else {
+                        // Fetch and display the current user's API usage for regular users
+                        fetch('/api/usage', {credentials: 'include'})
+                            .then(response => response.json())
+                            .then(userData => {
+                                document.getElementById('apiUsage').textContent = `You have made ${userData.apiCallsMade} out of ${userData.apiCallLimit} API calls.`;
+                            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('apiUsage').textContent = 'Error loading API usage.';
+                });
+        };
+    </script>
 </head>
 <body>
     <h2>Welcome to the Protected Page</h2>
     <p>This page is protected. Only logged-in users can access it.</p>
+    <p id="apiUsage">Loading your API usage...</p>
     <a href="/quote_generator" class="button">Go to Quote Generator</a>
 </body>
 </html>
