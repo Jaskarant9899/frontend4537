@@ -1,10 +1,12 @@
 const bcrypt = require('bcrypt');
-
 const express = require('express');
+const path = require('path');
 const mysql = require('mysql');
 
 const app = express();
-const port = 3000;
+const port = 3019;
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 const pool = mysql.createPool({
     connectionLimit: 10,
@@ -14,11 +16,22 @@ const pool = mysql.createPool({
     database: 'termproject_4537'
 });
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
+
+app.use(express.json());
+
+let fetch;
+import('node-fetch').then(({ default: nodeFetch }) => {
+  fetch = nodeFetch;
+});
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/serv1/login.html');
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
 app.post('/register', (req, res) => {
@@ -46,7 +59,7 @@ app.post('/register', (req, res) => {
 
 
 app.get('/login', (req, res) => {
-    res.sendFile(__dirname + '/login.html');
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.post('/login', (req, res) => {
@@ -80,9 +93,39 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.get('/protected', (req, res) => {
-    res.sendFile(__dirname + '/protected.html');
+app.post('/generate-quote', async (req, res) => {
+    if (!fetch) {
+      console.error('Fetch is not yet defined.');
+      return res.status(500).send('Server is not ready.');
+    }
+
+    try {
+      const flaskResponse = await fetch('http://127.0.0.1:5000/generate-quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body)
+      });
+
+      if (!flaskResponse.ok) {
+        throw new Error(`Flask server error: ${flaskResponse.statusText}`);
+      }
+
+      const data = await flaskResponse.json();
+      res.json(data);
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).send('Error fetching quote.');
+    }
 });
+
+app.get('/protected', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'protected.html'));
+});
+
+app.get('/quote_generator', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'quote_generator.html'));
+});
+
 
 // Start server
 app.listen(port, () => {
