@@ -145,6 +145,18 @@ app.get('/api/is-admin', (req, res) => {
     });
 });
 
+// Returns to the admin all of the users and the number of API calls they have made
+app.get('/api/admin/usage', (req, res) => {
+    if (!req.session.isAdmin) {
+        return res.status(403).send('Unauthorized');
+    }
+    pool.query('SELECT email, api_calls_made FROM users', (error, results) => {
+        if (error) {
+            return res.status(500).send('Error fetching data');
+        }
+        res.json(results);
+    });
+});
 
 // Start server
 app.listen(port, () => {

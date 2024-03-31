@@ -6,32 +6,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Protected Page</title>
     <script>
+        function fetchUserData() {
+            // Fetch the individual user's API usage
+            fetch('/api/usage', {credentials: 'include'})
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('apiUsage').textContent = `You have made ${data.apiCallsMade} out of ${data.apiCallLimit} API calls.`;
+                })
+                .catch(error => {
+                    console.error('Error fetching user data:', error);
+                    document.getElementById('apiUsage').textContent = 'Error loading your API usage data.';
+                });
+        }
+
+        function fetchAdminData() {
+            // Fetch and display all users' API usage for admin
+            fetch('/api/admin/usage', {credentials: 'include'})
+                .then(response => response.json())
+                .then(allUsersData => {
+                    const allUsageHtml = allUsersData.map(user => 
+                        `${user.email}: ${user.api_calls_made} API calls`).join('<br>');
+                    document.getElementById('apiUsage').innerHTML = allUsageHtml;
+                })
+                .catch(error => {
+                    console.error('Error fetching admin data:', error);
+                    document.getElementById('apiUsage').textContent = 'Error loading API usage data for all users.';
+                });
+        }
+
         window.onload = function() {
-            // Initially check if the user is an admin
+            // Check if the logged-in user is an admin to decide which data to fetch
             fetch('/api/is-admin', {credentials: 'include'})
                 .then(response => response.json())
                 .then(data => {
                     if (data.isAdmin) {
-                        // Fetch and display all users' API usage for admin
-                        fetch('/api/admin/usage', {credentials: 'include'})
-                            .then(response => response.json())
-                            .then(allUsersData => {
-                                const allUsageHtml = allUsersData.map(user => 
-                                    `${user.email}: ${user.api_calls_made} API calls`).join('<br>');
-                                document.getElementById('apiUsage').innerHTML = allUsageHtml;
-                            });
+                        fetchAdminData(); // For admin users
                     } else {
-                        // Fetch and display the current user's API usage for regular users
-                        fetch('/api/usage', {credentials: 'include'})
-                            .then(response => response.json())
-                            .then(userData => {
-                                document.getElementById('apiUsage').textContent = `You have made ${userData.apiCallsMade} out of ${userData.apiCallLimit} API calls.`;
-                            });
+                        fetchUserData(); // For regular users
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('apiUsage').textContent = 'Error loading API usage.';
+                    document.getElementById('apiUsage').textContent = 'Error determining user role.';
                 });
         };
     </script>
@@ -39,7 +55,7 @@
 <body>
     <h2>Welcome to the Protected Page</h2>
     <p>This page is protected. Only logged-in users can access it.</p>
-    <p id="apiUsage">Loading your API usage...</p>
-    <a href="/quote_generator" class="button">Go to Quote Generator</a>
+    <div id="apiUsage">Loading your API usage...</div>
+    <a href="/quote_generator.html" class="button">Go to Quote Generator</a>
 </body>
 </html>
