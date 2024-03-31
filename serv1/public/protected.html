@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protected Page</title>
+</head>
+<body>
+    <h2>Welcome to the Protected Page</h2>
+    <p>This page is protected. Only logged-in users can access it.</p>
+    <a href="/quote_generator" class="button">Go to Quote Generator</a>
+
+    <script>
+        // Check if the user is authenticated
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+            // Redirect to the login page if not authenticated
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>
