@@ -1,7 +1,7 @@
-const bcrypt = require('bcrypt');
-
 const express = require('express');
 const mysql = require('mysql');
+const bcrypt = require('bcrypt');
+const path = require('path'); // Require the 'path' module
 
 const app = express();
 const port = 3000;
@@ -16,9 +16,12 @@ const pool = mysql.createPool({
 
 app.use(express.urlencoded({ extended: false }));
 
+// Serve static files from the 'serv1' directory
+app.use(express.static(path.join(__dirname, './bac')));
+
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/serv1/login.html');
+    res.sendFile(path.join(__dirname, '/login.html'));
 });
 
 app.post('/register', (req, res) => {
@@ -44,9 +47,8 @@ app.post('/register', (req, res) => {
     });
 });
 
-
 app.get('/login', (req, res) => {
-    res.sendFile(__dirname + '/login.html');
+    res.sendFile(path.join(__dirname, '/login.html'));
 });
 
 app.post('/login', (req, res) => {
@@ -81,7 +83,7 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/protected', (req, res) => {
-    res.sendFile(__dirname + '/protected.html');
+    res.sendFile(path.join(__dirname, '/serv1/protected.html'));
 });
 
 // Start server
