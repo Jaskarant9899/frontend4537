@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
-
 const express = require('express');
+const path = require('path');
 const mysql = require('mysql');
 const cookieParser = require('cookie-parser');
 
@@ -8,6 +8,9 @@ const app = express();
 const port = 3019;
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cookieParser());
 
 const pool = mysql.createPool({
     connectionLimit: 10,
@@ -26,11 +29,22 @@ import('node-fetch').then(({ default: nodeFetch }) => {
   fetch = nodeFetch;
 });
 
-// Routes
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+// Middleware to verify session cookie
+const verifySession = (req, res, next) => {
+    const sessionId = req.cookies.sessionId;
 
+    if (!sessionId) {
+        return res.status(401).send('Access Denied: Session ID is not provided');
+    }
+
+    // Perform any necessary verification of the session ID
+    // For example, you can query the database to validate the session
+
+    // Assuming session validation is successful
+    next();
+};
+
+// Routes
 app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
@@ -97,6 +111,7 @@ app.post('/login', (req, res) => {
     });
 });
 
+
 app.post('/generate-quote', async (req, res) => {
     if (!fetch) {
       console.error('Fetch is not yet defined.');
@@ -122,11 +137,11 @@ app.post('/generate-quote', async (req, res) => {
     }
 });
 
-app.get('/protected', (req, res) => {
+app.get('/protected', verifySession, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'protected.html'));
 });
 
-app.get('/quote_generator', (req, res) => {
+app.get('/quote_generator', verifySession, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'quote_generator.html'));
 });
 
