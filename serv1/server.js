@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
+
 const express = require('express');
-const path = require('path');
 const mysql = require('mysql');
 const cookieParser = require('cookie-parser');
 
@@ -8,9 +8,6 @@ const app = express();
 const port = 3019;
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(cookieParser());
 
 const pool = mysql.createPool({
     connectionLimit: 10,
@@ -20,23 +17,17 @@ const pool = mysql.createPool({
     database: 'termproject_4537'
 });
 
-// Middleware to verify session cookie
-const verifySession = (req, res, next) => {
-    const sessionId = req.cookies.sessionId;
+app.use(express.urlencoded({ extended: true }));
 
-    if (!sessionId) {
-        return res.status(401).send('Access Denied: Session ID is not provided');
-    }
+app.use(express.json());
 
-    // Perform any necessary verification of the session ID
-    // For example, you can query the database to validate the session
-
-    // Assuming session validation is successful
-    next();
-};
+let fetch;
+import('node-fetch').then(({ default: nodeFetch }) => {
+  fetch = nodeFetch;
+});
 
 // Routes
-app.get('/login', (req, res) => {
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
@@ -65,6 +56,11 @@ app.post('/register', (req, res) => {
             res.redirect('/login');
         });
     });
+});
+
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.post('/login', (req, res) => {
@@ -101,14 +97,6 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.get('/protected', verifySession, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'protected.html'));
-});
-
-app.get('/quote_generator', verifySession, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'quote_generator.html'));
-});
-
 app.post('/generate-quote', async (req, res) => {
     if (!fetch) {
       console.error('Fetch is not yet defined.');
@@ -134,6 +122,13 @@ app.post('/generate-quote', async (req, res) => {
     }
 });
 
+app.get('/protected', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'protected.html'));
+});
+
+app.get('/quote_generator', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'quote_generator.html'));
+});
 
 
 // Start server
