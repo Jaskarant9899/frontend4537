@@ -105,6 +105,10 @@ app.get('/protected', verifySession, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'protected.html'));
 });
 
+app.get('/quote_generator', verifySession, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'quote_generator.html'));
+});
+
 app.post('/generate-quote', async (req, res) => {
     if (!fetch) {
       console.error('Fetch is not yet defined.');
